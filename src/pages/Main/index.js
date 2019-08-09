@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-community/async-storage';
 import { SafeAreaView, View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import logo from '../../assets/logo.png';
 import like from '../../assets/like.png';
@@ -22,24 +23,38 @@ export default function Main({ navigation }) {
       loadUsers();
   }, [id]);
 
-  async function handleLike(id) {
-      await api.post(`/devs/${id}/likes`, null, {
+  async function handleLike() {
+      const [user, ...rest] = users;
+
+      await api.post(`/devs/${user._id}/likes`, null, {
           headers: { user: id }
       });
 
-      setUsers(users.filter(user => user._id != id));
+      setUsers(rest);
   }
 
-  async function handleDislike(id) {
-      await api.post(`/devs/${id}/dislikes`, null, {
+  async function handleDislike() {
+    const [user, ...rest] = users;
+
+      await api.post(`/devs/${user._id}/dislikes`, null, {
           headers: { user: id },
       });
 
-      setUsers(users.filter(user => user._id != id));
+      setUsers(rest);
   }
+
+  async function handleLogout(){
+    await AsyncStorage.clear();
+
+    navigation.navigate('Login');
+  }
+
+
   return (
     <SafeAreaView style={styles.container}>
-      <Image style={styles.logo} source={logo} />
+      <TouchableOpacity onPress={handleLogout}> 
+        <Image style={styles.logo} source={logo} />
+      </TouchableOpacity>
       <View style={styles.cardContainer}>
         { users.length == 0 
           ? <Text style={styles.empty}>Acabou :(</Text>
@@ -56,10 +71,10 @@ export default function Main({ navigation }) {
           )}
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleDislike}> 
           <Image source={dislike} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleLike}>
           <Image source={like} />
         </TouchableOpacity>
       </View>
@@ -136,5 +151,11 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     }
+  },
+  empty: {
+    alignSelf: 'center',
+    color: '#999',
+    fontSize: 24,
+    fontWeight: 'bold',
   }
 });
