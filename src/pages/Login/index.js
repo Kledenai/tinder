@@ -1,27 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-community/async-storage';
 import { KeyboardAvoidingView, Platform, Text, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import logo from '../../assets/logo.png';
+import api from '../../services/api';
 
-export default function Login() {
-  return (
-    <KeyboardAvoidingView 
-        style={styles.container}
-        behavior="padding"
-        enabled={Platform.OS == 'ios'}
-    >
-        <Image source={logo} />
-        <TextInput 
-            placeholder="Digite seu usuário do github"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={styles.input}
-        />
-        <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>logar</Text>
-        </TouchableOpacity>
-    </KeyboardAvoidingView>
-  );
+export default function Login({ navigation }) {
+    const [user, setUser ] = useState('');
+
+    useEffect(() => {
+        AsyncStorage.getItem('user').then(user => {
+            if(user){
+                navigation.navigate('Main', { user });
+            }
+        })
+    }, [])
+
+    async function handleLogin(){
+        const response = await api.post('/devs', { username: user });
+
+        const { _id } = response.data;
+
+        await AsyncStorage.setItem('user', _id);
+
+        navigation.navigate('Main', { _id }); 
+    }
+
+    return (
+        <KeyboardAvoidingView 
+            style={styles.container}
+            behavior="padding"
+            enabled={Platform.OS == 'ios'}
+        >
+            <Image source={logo} />
+            <TextInput 
+                placeholder="Digite seu usuário do github"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.input}
+                onChangeText={setUser}
+            />
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>logar</Text>
+            </TouchableOpacity>
+        </KeyboardAvoidingView>
+    );
 }
 
 const styles = StyleSheet.create({
